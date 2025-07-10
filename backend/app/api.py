@@ -1,15 +1,15 @@
-from fastapi import FastAPI, Response
-import pymongo
+from fastapi import FastAPI, Response, File, UploadFile, HTTPException, Form
+from fastapi.responses import StreamingResponse
 import datetime
-from bson.json_util import dumps
-from bson.timestamp import Timestamp
-from bson.objectid import ObjectId
 from fastapi.staticfiles import StaticFiles
 import json
 import os
 import requests
 from typing import Dict, Any
 from fastapi.middleware.cors import CORSMiddleware
+import base64
+import json
+import time
 
 api_app = FastAPI(title="api-app")
 app = FastAPI(title="spa-app")
@@ -23,10 +23,72 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-#client = pymongo.MongoClient(os.environ["MDBCONNSTR"].strip())
-#db = client[""]
-#col = db[""]
+FIREWORKSAPIKEY = os.environ["FIREWORKSKEY"].strip()
 
 @api_app.get("/hello")
 async def hello():
     return {"message": "Hello World"}
+
+@api_app.post("/generate")
+async def generate(
+    file: UploadFile = File(...),
+    prompt: str = Form("A beautiful sunset over the ocean")
+):
+    url = "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-kontext-pro"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "image/jpeg",
+        "Authorization": f"Bearer {FIREWORKSAPIKEY}",
+    }
+
+    try:
+        image_base64 = base64.b64encode(file.file.read()).decode('utf-8')
+
+        data = {
+            "input_image": f"data:image/jpeg;base64,{image_base64}",
+            "prompt": prompt
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        if response.status_code == 200:
+            result = response.json()
+            if "request_id" in result:
+                # Poll for completion
+                result_endpoint = f"{url}/get_result"
+                for attempt in range(60):
+                    time.sleep(1)
+                    poll_response = requests.post(result_endpoint, 
+                        headers=headers, 
+                        json={"id": result["request_id"]})
+                    if poll_response.status_code == 200:
+                        poll_result = poll_response.json()
+                        if poll_result.get("status") in ["Ready", "Complete", "Finished"]:
+                            image_data = poll_result.get("result", {}).get("sample")
+                            if image_data:
+                                if isinstance(image_data, str) and image_data.startswith("http"):
+                                    # If the result is a URL, fetch the image
+                                    img_resp = requests.get(image_data)
+                                    if img_resp.status_code == 200:
+                                        return StreamingResponse(
+                                            iter([img_resp.content]),
+                                            media_type="image/jpeg"
+                                        )
+                                    else:
+                                        raise HTTPException(status_code=502, detail="Failed to fetch image from URL.")
+                                else:
+                                    # Base64 image data
+                                    img_bytes = base64.b64decode(image_data)
+                                    return StreamingResponse(
+                                        iter([img_bytes]),
+                                        media_type="image/jpeg"
+                                    )
+                            break
+                        elif poll_result.get("status") in ["Failed", "Error"]:
+                            raise HTTPException(status_code=502, detail=poll_result.get("details", "Generation failed."))
+        else:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Something went wrong: {str(e)}')
+    finally:
+        file.file.close()

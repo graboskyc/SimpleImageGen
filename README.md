@@ -1,7 +1,7 @@
-# PFAMTemplate
+# SimpleImageGen
 
-Join the PFAM
+Wrapper for Flux on Fireworks.ai to make it simpler for my wife to generate images
 
-PicoCSS, FastAPI, AlpineJS, MongoDB
+My first vibe coding yolo app with no validation or anything
 
-![](screenshots/template.png)
+![](screenshots/ss01.png)
