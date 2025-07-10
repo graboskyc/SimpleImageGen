@@ -16,7 +16,7 @@
 
     </head>
     <body data-theme="dark">
-        <div x-data="init()" x-init="loadList" data-theme="dark" class="container">
+        <div x-data="init()" data-theme="dark" class="container">
             <nav data-theme="dark">
                 <ul>
                     <li><img height="32" src="/img/icon.png" style="height: 32px !important;" /></li>
@@ -31,44 +31,24 @@
 
             <article>
                 <header><h1>Create an Image</h1></header>
-                <form id="imageGenForm" enctype="multipart/form-data">
+                <form @submit.prevent="submit" enctype="multipart/form-data">
                     <label for="prompt">Prompt</label>
-                    <textarea id="prompt" name="prompt" rows="2" placeholder="Describe your image..."></textarea>
+                    <textarea id="prompt" name="prompt" rows="2" placeholder="Describe your image..." x-model="prompt"></textarea>
                     <label for="file">Upload Image</label>
-                    <input type="file" id="file" name="file" accept="image/*">
-                    <button type="submit">Generate</button>
+                    <input type="file" id="file" name="file" accept="image/*" x-ref="fileInput">
+                    <button type="submit" x-bind:disabled="loading">Generate</button>
                 </form>
-                <div id="result"></div>
-                <script>
-                document.getElementById('imageGenForm').addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    const form = e.target;
-                    const formData = new FormData(form);
-                    document.getElementById('result').innerHTML = 'Generating...';
-                    try {
-                        const response = await fetch('/api/generate', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        if (response.ok) {
-                            const blob = await response.blob();
-                            if (blob.type.startsWith('image/')) {
-                                const url = URL.createObjectURL(blob);
-                                document.getElementById('result').innerHTML = `<img src="${url}" alt="Generated Image" style="max-width:100%;margin-top:1em;" />`;
-                            } else {
-                                // Not an image, show as text
-                                const text = await blob.text();
-                                document.getElementById('result').innerHTML = 'Error: ' + text;
-                            }
-                        } else {
-                            const text = await response.text();
-                            document.getElementById('result').innerHTML = 'Error: ' + text;
-                        }
-                    } catch (err) {
-                        document.getElementById('result').innerHTML = 'Error: ' + err;
-                    }
-                });
-                </script>
+                <div id="result">
+                    <template x-if="loading">
+                        <span aria-busy="true">Generating...</span>
+                    </template>
+                    <template x-if="error">
+                        <span x-text="'Error: ' + error" style="color:red;"></span>
+                    </template>
+                    <template x-if="imageUrl">
+                        <img :src="imageUrl" alt="Generated Image" style="max-width:100%;margin-top:1em;" />
+                    </template>
+                </div>
             </article>
 
     </body>

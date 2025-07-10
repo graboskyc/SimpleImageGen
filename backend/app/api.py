@@ -53,11 +53,13 @@ async def generate(
 
         if response.status_code == 200:
             result = response.json()
+            print(f"Response from Fireworks API: {json.dumps(result, indent=2)}")
             if "request_id" in result:
                 # Poll for completion
                 result_endpoint = f"{url}/get_result"
                 for attempt in range(60):
                     time.sleep(1)
+                    print(f"Polling for result, attempt {attempt + 1}/60 for request_id: {result['request_id']}")
                     poll_response = requests.post(result_endpoint, 
                         headers=headers, 
                         json={"id": result["request_id"]})
@@ -92,3 +94,5 @@ async def generate(
         raise HTTPException(status_code=500, detail=f'Something went wrong: {str(e)}')
     finally:
         file.file.close()
+
+    print("Image generation completed.")

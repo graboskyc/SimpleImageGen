@@ -1,19 +1,41 @@
 function init() {
     return {
-        foo: "",
-        
-
-        async loadList() {
-            console.log('Loading List');
-            this.foo= await (await fetch('/api/hello')).json();
-            console.log(this.foo);
-        },
-
-        delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms))
-        },
-          
-
-
+        prompt: '',
+        loading: false,
+        error: '',
+        imageUrl: '',
+        submit: async function() {
+            this.loading = true;
+            this.error = '';
+            this.imageUrl = '';
+            const formData = new FormData();
+            formData.append('prompt', this.prompt);
+            const fileInput = this.$refs.fileInput;
+            if (fileInput && fileInput.files.length > 0) {
+                formData.append('file', fileInput.files[0]);
+            }
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    if (blob.type.startsWith('image/')) {
+                        this.imageUrl = URL.createObjectURL(blob);
+                    } else {
+                        const text = await blob.text();
+                        this.error = text;
+                    }
+                } else {
+                    const text = await response.text();
+                    this.error = text;
+                }
+            } catch (err) {
+                this.error = err;
+            } finally {
+                this.loading = false;
+            }
+        }
     }
 }
