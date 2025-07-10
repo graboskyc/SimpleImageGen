@@ -15,6 +15,7 @@ function init() {
                 formData.append('file', fileInput.files[0]);
             }
             try {
+                console.log(formData);
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     body: formData

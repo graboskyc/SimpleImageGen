@@ -31,29 +31,36 @@ async def hello():
 
 @api_app.post("/generate")
 async def generate(
-    file: UploadFile = File(...),
+    file: UploadFile = File(None),
     prompt: str = Form("A beautiful sunset over the ocean")
 ):
     url = "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-kontext-pro"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "image/jpeg",
-        "Authorization": f"Bearer {FIREWORKSAPIKEY}",
-    }
 
     try:
-        image_base64 = base64.b64encode(file.file.read()).decode('utf-8')
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {FIREWORKSAPIKEY}",
+        }
 
         data = {
-            "input_image": f"data:image/jpeg;base64,{image_base64}",
             "prompt": prompt
         }
+
+        # if a file is provided
+        if file:
+            headers["Accept"] = "image/jpeg"
+            image_base64 = base64.b64encode(file.file.read()).decode('utf-8')
+            data["input_image"] = f"data:image/jpeg;base64,{image_base64}"
+            print("Using image")
+        else:
+            print("prompt only")
+            headers["Accept"] = "application/json"
 
         response = requests.post(url, headers=headers, json=data)
 
         if response.status_code == 200:
             result = response.json()
-            print(f"Response from Fireworks API: {json.dumps(result, indent=2)}")
+            #print(f"Response from Fireworks API: {json.dumps(result, indent=2)}")
             if "request_id" in result:
                 # Poll for completion
                 result_endpoint = f"{url}/get_result"
@@ -66,6 +73,7 @@ async def generate(
                     if poll_response.status_code == 200:
                         poll_result = poll_response.json()
                         if poll_result.get("status") in ["Ready", "Complete", "Finished"]:
+                            print(poll_result)
                             image_data = poll_result.get("result", {}).get("sample")
                             if image_data:
                                 if isinstance(image_data, str) and image_data.startswith("http"):
@@ -93,6 +101,7 @@ async def generate(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Something went wrong: {str(e)}')
     finally:
-        file.file.close()
+        if file:
+            file.file.close()
 
     print("Image generation completed.")
