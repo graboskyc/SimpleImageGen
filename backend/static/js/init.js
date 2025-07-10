@@ -4,12 +4,14 @@ function init() {
         loading: false,
         error: '',
         imageUrl: '',
+        safetyLevel: 2,
         submit: async function() {
             this.loading = true;
             this.error = '';
             this.imageUrl = '';
             const formData = new FormData();
             formData.append('prompt', this.prompt);
+            formData.append('safety', this.safetyLevel);
             const fileInput = this.$refs.fileInput;
             if (fileInput && fileInput.files.length > 0) {
                 formData.append('file', fileInput.files[0]);

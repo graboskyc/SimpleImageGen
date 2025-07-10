@@ -32,7 +32,8 @@ async def hello():
 @api_app.post("/generate")
 async def generate(
     file: UploadFile = File(None),
-    prompt: str = Form("A beautiful sunset over the ocean")
+    prompt: str = Form("A beautiful sunset over the ocean"),
+    safety: int = Form(2)  # Default safety level
 ):
     url = "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-kontext-pro"
 
@@ -43,7 +44,8 @@ async def generate(
         }
 
         data = {
-            "prompt": prompt
+            "prompt": prompt,
+            "safety_tolerance": safety
         }
 
         # if a file is provided
@@ -57,6 +59,7 @@ async def generate(
             headers["Accept"] = "application/json"
 
         response = requests.post(url, headers=headers, json=data)
+        print(data)
 
         if response.status_code == 200:
             result = response.json()
