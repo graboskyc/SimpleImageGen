@@ -33,9 +33,12 @@
                 <header><h1>Create an Image</h1></header>
                 <form @submit.prevent="submit" enctype="multipart/form-data">
                     <label for="prompt">Prompt</label>
-                    <textarea id="prompt" name="prompt" rows="2" placeholder="Describe your image..." x-model="prompt"></textarea>
+                    <textarea id="prompt" name="prompt" rows="2" placeholder="Describe your image..." x-model="prompt" x-bind:disabled="loading"></textarea>
                     <label for="file">Upload Image</label>
-                    <input type="file" id="file" name="file" accept="image/*" x-ref="fileInput">
+                    <input type="file" id="file" name="file" accept="image/*" x-ref="fileInput" @change="previewUpload">
+                    <template x-if="uploadPreview">
+                        <img :src="uploadPreview" alt="Preview" style="max-width:120px;max-height:120px;margin:0.5em 0 0.5em 0;display:block;border-radius:8px;box-shadow:0 0 4px #0002;" />
+                    </template>
                     <button type="submit" x-bind:disabled="loading">Generate</button>
                 </form>
                 <div id="result">

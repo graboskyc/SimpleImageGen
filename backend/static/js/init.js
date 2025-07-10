@@ -36,6 +36,23 @@ function init() {
             } finally {
                 this.loading = false;
             }
+        },
+        previewUpload: function() {
+            const fileInput = this.$refs.fileInput;
+            if (fileInput && fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.uploadPreview = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    this.uploadPreview = '';
+                }
+            } else {
+                this.uploadPreview = '';
+            }
         }
     }
 }
