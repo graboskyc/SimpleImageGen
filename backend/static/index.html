@@ -60,5 +60,17 @@
                 </div>
             </article>
 
+            <article>
+                <header><h1>Your Past Images</h1></header>
+                <details>
+                    <summary>Click to view past images</summary>
+                    <div style="display:flex;flex-wrap:wrap;gap:1em;margin-top:1em;">
+                        <template x-for="img in pastImages" :key="img">
+                            <img :src="img" alt="Past Image" style="max-width:120px;max-height:120px;border-radius:8px;box-shadow:0 0 4px #0002;" />
+                        </template>
+                    </div>
+                </details>
+            </article>
+
     </body>
 </html>

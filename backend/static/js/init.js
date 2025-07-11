@@ -5,6 +5,8 @@ function init() {
         error: '',
         imageUrl: '',
         safetyLevel: 2,
+        uploadPreview: '',
+        pastImages: JSON.parse(localStorage.getItem('pastImages') || '[]'),
         submit: async function() {
             this.loading = true;
             this.error = '';
@@ -17,7 +19,6 @@ function init() {
                 formData.append('file', fileInput.files[0]);
             }
             try {
-                console.log(formData);
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     body: formData
@@ -26,6 +27,15 @@ function init() {
                     const blob = await response.blob();
                     if (blob.type.startsWith('image/')) {
                         this.imageUrl = URL.createObjectURL(blob);
+
+                        // Convert blob to base64 and store in localStorage
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            // Add to pastImages array
+                            this.pastImages.push(reader.result);
+                            localStorage.setItem('pastImages', JSON.stringify(this.pastImages));
+                        };
+                        reader.readAsDataURL(blob);
                     } else {
                         const text = await blob.text();
                         this.error = text;
