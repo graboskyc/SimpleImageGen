@@ -15,7 +15,8 @@ function init() {
             this.status = 'Requesting microphone...';
             navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
                 this.status = 'Microphone active, connecting...';
-                this.ws = new WebSocket('ws://' + window.location.host + '/api/transcribe');
+                const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+                this.ws = new WebSocket(wsProtocol + "://" + window.location.host + "/api/transcribe");
                 this.ws.binaryType = 'arraybuffer';
                 this.ws.onopen = () => {
                     this.status = 'Streaming audio...';
