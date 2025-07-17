@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Response, File, UploadFile, HTTPException, Form
+import asyncio
+from fastapi import FastAPI, Response, File, UploadFile, HTTPException, Form, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 import datetime
 from fastapi.staticfiles import StaticFiles
@@ -10,6 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import base64
 import json
 import time
+import threading
+import websocket as wsclient
+import urllib.parse
 
 api_app = FastAPI(title="api-app")
 app = FastAPI(title="spa-app")
@@ -108,3 +112,94 @@ async def generate(
             file.file.close()
 
     print("Image generation completed.")
+
+
+
+@api_app.websocket("/transcribe")
+async def transcribe_ws(websocket: WebSocket):
+    ENDPOINT_URL_BASE = "wss://audio-streaming.us-virginia-1.direct.fireworks.ai"
+    ENDPOINT_PATH = "/v1/audio/transcriptions/streaming"
+    url_params = urllib.parse.urlencode({
+        "language": "en",
+        "authorization": f"Bearer {FIREWORKSAPIKEY}",
+    })
+    ENDPOINT_URL = f"{ENDPOINT_URL_BASE}{ENDPOINT_PATH}?{url_params}"
+    print(f"Connecting to: {ENDPOINT_URL}")
+
+    await websocket.accept()
+    print("WebSocket connection accepted for transcription.")
+
+    # Buffer for audio chunks
+    audio_chunks = []
+    transcript_segments = []
+    ws_ready = threading.Event()
+
+    def on_open(ws):
+        print("Connected to Fireworks.ai transcription endpoint.")
+        ws_ready.set()
+
+    import queue
+    transcript_queue = queue.Queue()
+
+    def on_message(ws, message):
+        #print(f"Received message: {message}")
+        print("Received message from Fireworks WebSocket.")
+        response = json.loads(message)
+        if "error" in response:
+            print(response["error"])
+        else:
+            transcript_queue.put(response["text"])
+
+    def on_error(ws, error):
+        print(f"Error: {error}")
+
+    def on_close(ws, close_status_code, close_msg):
+        print(f"Fireworks.ai WebSocket closed. Code: {close_status_code}, Message: {close_msg}")
+
+    # Store the websocket client instance so we can send audio chunks directly
+    fireworks_ws_client = {"ws": None}
+
+    def run_fireworks_ws():
+        print("Starting Fireworks WebSocket thread...")
+        fw_ws = wsclient.WebSocketApp(
+            ENDPOINT_URL,
+            on_open=on_open,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close,
+        )
+        fireworks_ws_client["ws"] = fw_ws
+        fw_ws.run_forever()
+        print("Fireworks WebSocket thread ended.")
+
+    fw_thread = threading.Thread(target=run_fireworks_ws, daemon=True)
+    fw_thread.start()
+    ws_ready.wait(timeout=10)
+    print("Fireworks WebSocket thread started and ready.")
+
+    try:
+        while True:
+            # Check for transcript to send
+            try:
+                transcript = transcript_queue.get_nowait()
+                await websocket.send_text(transcript)
+            except queue.Empty:
+                pass
+            # Receive audio chunk
+            try:
+                data = await asyncio.wait_for(websocket.receive_bytes(), timeout=0.1)
+                print(f"Received audio chunk of length {len(data)} bytes.")
+                fw_ws = fireworks_ws_client.get("ws")
+                if fw_ws and fw_ws.sock and fw_ws.sock.connected:
+                    print("Sending audio chunk to Fireworks.ai websocket.")
+                    fw_ws.send(data, opcode=wsclient.ABNF.OPCODE_BINARY)
+                else:
+                    print("Fireworks WebSocket not ready or not connected.")
+            except asyncio.TimeoutError:
+                pass
+    except WebSocketDisconnect:
+        print("WebSocket disconnected.")
+        if fireworks_ws_client["ws"]:
+            fireworks_ws_client["ws"].close()
+    except Exception as e:
+        print(f"WebSocket error: {e}")

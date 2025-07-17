@@ -2,3 +2,5 @@ fastapi
 python-multipart
 uvicorn
 requests
+websockets
+websocket-client

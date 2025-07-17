@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="dark" />
+        
+        <title>Simple Transcribe</title>
+
+        <script src="//unpkg.com/alpinejs"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.yellow.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+        <script src="/js/transcribe.js"></script>
+        <link rel="stylesheet" href="/css/custom.css" />
+
+    </head>
+    <body data-theme="dark">
+        <div x-data="init()" data-theme="dark" class="container">
+            <nav data-theme="dark">
+                <ul>
+                    <li><img height="32" src="/img/icon.png" style="height: 32px !important;" /></li>
+                </ul>
+            </nav>
+
+
+            <article class="container-fluid" data-theme="dark">
+                <h1>Simple Transcribe</h1>
+            </article>
+            
+
+            <article>
+                <header><h1>Create a Transcript</h1></header>
+                <button type="button" @click="startListening" style="margin-bottom:1em;">
+                    <span x-show="!listening">🎤 Start Listening</span>
+                    <span x-show="listening">🛑 Stop Listening</span>
+                </button>
+                <div x-text="status"></div>
+                <div style="margin-top:1em;">
+                    <div style="background:#222;padding:0.5em 1em;margin-bottom:0.25em;border-radius:6px;color:#ffe;" x-text="transcript"></div>
+                </div>
+            </article>
+
+            <article>
+                <header><h1>Your Past Transcripts</h1></header>
+                <details>
+                    <summary>Click to view past images</summary>
+                    
+                </details>
+            </article>
+
+    </body>
+</html>
