@@ -38,9 +38,12 @@
                     <span x-show="!listening">🎤 Start Listening</span>
                     <span x-show="listening">🛑 Stop Listening</span>
                 </button>
+                <button type="button" @click="copyTranscript" style="margin-top:0.5em;" x-show="!listening && transcript">📋 Copy Transcript</button>
                 <div x-text="status"></div>
                 <div style="margin-top:1em;">
-                    <div style="background:#222;padding:0.5em 1em;margin-bottom:0.25em;border-radius:6px;color:#ffe;" x-text="transcript"></div>
+                    <template x-for="(item, index) in transcript" :key="index">
+                        <div style="background:#222;padding:0.5em 1em;margin-bottom:0.25em;border-radius:6px;color:#ffe;" x-text="item"></div>
+                    </template>
                 </div>
             </article>
 

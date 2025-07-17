@@ -66,6 +66,11 @@ function init() {
             } else {
                 this.uploadPreview = '';
             }
+        },
+        modalImg: '',
+        openModal(img) {
+            this.modalImg = img;
+            this.$refs.imgModal.showModal();
         }
     }
 }

@@ -3,7 +3,7 @@ function init() {
         listening: false,
         status: '',
         ws: null,
-        transcript: "",
+        transcript: [''],
         audioContext: null,
         processor: null,
         stream: null,
@@ -40,8 +40,13 @@ function init() {
                     };
                 };
                 this.ws.onmessage = (event) => {
-                    console.log('Received message:', event.data);
-                    this.transcript = event.data;
+                    //console.log('Received message:', event.data);
+                    var payload = JSON.parse(event.data);
+                    if(this.transcript.length - 1 < payload["id"]) {
+                        this.transcript.push(payload["text"]);
+                    } else {
+                        this.transcript[payload["id"]] = payload["text"];
+                    }
                 };
                 this.ws.onclose = () => {
                     this.status = 'WebSocket closed.';
@@ -72,6 +77,15 @@ function init() {
             }
             if (this.audioContext) {
                 this.audioContext.close();
+            }
+        },
+        copyTranscript() {
+            if (this.transcript) {
+                navigator.clipboard.writeText(this.transcript.join('\n')).then(() => {
+                    this.status = 'Transcript copied to clipboard!';
+                }, () => {
+                    this.status = 'Failed to copy transcript.';
+                });
             }
         }
     }

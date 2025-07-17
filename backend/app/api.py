@@ -142,13 +142,16 @@ async def transcribe_ws(websocket: WebSocket):
     transcript_queue = queue.Queue()
 
     def on_message(ws, message):
-        #print(f"Received message: {message}")
-        print("Received message from Fireworks WebSocket.")
+        #print("Received message from Fireworks.")
         response = json.loads(message)
         if "error" in response:
             print(response["error"])
         else:
-            transcript_queue.put(response["text"])
+            for s in response["segments"]:
+                # append or update the transcript
+                obj = {"id": s["id"], "text": s["text"]}
+                #print(f"\tSegment: {obj}")
+                transcript_queue.put(obj)
 
     def on_error(ws, error):
         print(f"Error: {error}")
@@ -182,16 +185,17 @@ async def transcribe_ws(websocket: WebSocket):
             # Check for transcript to send
             try:
                 transcript = transcript_queue.get_nowait()
-                await websocket.send_text(transcript)
+                #print(f"Sending transcript: {transcript}")
+                await websocket.send_text(json.dumps(transcript))
             except queue.Empty:
                 pass
             # Receive audio chunk
             try:
                 data = await asyncio.wait_for(websocket.receive_bytes(), timeout=0.1)
-                print(f"Received audio chunk of length {len(data)} bytes.")
+                #print(f"Received audio chunk of length {len(data)} bytes.")
                 fw_ws = fireworks_ws_client.get("ws")
                 if fw_ws and fw_ws.sock and fw_ws.sock.connected:
-                    print("Sending audio chunk to Fireworks.ai websocket.")
+                    #print("Sending audio chunk to Fireworks.ai websocket.")
                     fw_ws.send(data, opcode=wsclient.ABNF.OPCODE_BINARY)
                 else:
                     print("Fireworks WebSocket not ready or not connected.")
