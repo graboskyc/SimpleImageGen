@@ -33,6 +33,7 @@ FIREWORKSAPIKEY = os.environ["FIREWORKSKEY"].strip()
 async def hello():
     return {"message": "Hello World"}
 
+
 @api_app.post("/generate")
 async def generate(
     file: UploadFile = File(None),
@@ -207,3 +208,48 @@ async def transcribe_ws(websocket: WebSocket):
             fireworks_ws_client["ws"].close()
     except Exception as e:
         print(f"WebSocket error: {e}")
+
+
+@api_app.post("/summarize")
+async def summarize(
+    transcript: str = Form(...)
+):
+    """
+    Summarize a transcript using Fireworks.ai or a placeholder model.
+    """
+    url = "https://api.fireworks.ai/inference/v1/chat/completions"
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + FIREWORKSAPIKEY
+    }
+    data = {
+        "model": "accounts/fireworks/models/llama-v3p1-8b-instruct",
+        "max_tokens": 4096,
+        "top_p": 1,
+        "top_k": 40,
+        "presence_penalty": 0,
+        "frequency_penalty": 0,
+        "temperature": 0.6,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that summarizes transcripts. When a user provides a transcript, you will summarize it concisely and accurately."
+            },
+            {
+                "role": "user",
+                "content": f"{transcript}"
+            }
+        ]
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        print("Summarizing transcript with Fireworks.ai...")
+        if response.status_code == 200:
+            result = response.json()
+            #print(f"Response from Fireworks API: {json.dumps(result, indent=2)}")
+            return result
+        else:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Summarization failed: {str(e)}')

@@ -87,6 +87,37 @@ function init() {
                     this.status = 'Failed to copy transcript.';
                 });
             }
+        },
+        summary: '',
+        summarizeTranscript: async function() {
+            this.status = 'Summarizing transcript...';
+            const formData = new FormData();
+            formData.append('transcript', this.transcript.join('\n'));
+            try {
+                const response = await fetch('/api/summarize', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Summary response:', data);
+                    // Fireworks returns either a summary or a full result
+                    if (data.summary) {
+                        this.summary = data.summary;
+                    } else if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                        this.summary = data.choices[0].message.content;
+                    } else {
+                        this.summary = 'No summary returned.';
+                    }
+                    this.status = 'Summary complete.';
+                } else {
+                    this.status = 'Error summarizing transcript.';
+                    this.summary = '';
+                }
+            } catch (err) {
+                this.status = 'Error summarizing transcript.';
+                this.summary = '';
+            }
         }
     }
 }
