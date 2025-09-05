@@ -11,9 +11,10 @@ function init() {
             this.loading = true;
             this.error = '';
             this.imageUrl = '';
+            var sl = parseInt(this.safetyLevel);
             const formData = new FormData();
             formData.append('prompt', this.prompt);
-            formData.append('safety', this.safetyLevel);
+            formData.append('safety', sl);
             const fileInput = this.$refs.fileInput;
             if (fileInput && fileInput.files.length > 0) {
                 formData.append('file', fileInput.files[0]);
