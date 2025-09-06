@@ -57,7 +57,7 @@ function init() {
         loading: false,
         error: '',
         imageUrl: '',
-        safetyLevel: 2,
+        safetyLevel: Number(localStorage.getItem('safetyLevel')) || 2,
         uploadPreview: '',
         pastImages: [],
         async loadPastData() {
@@ -65,9 +65,16 @@ function init() {
             console.log(this.pastImages);
         },
         async initLoad() {
+            // Retrieve safetyLevel from localStorage if available
+            const stored = localStorage.getItem('safetyLevel');
+            if (stored !== null) {
+                this.safetyLevel = Number(stored);
+            }
             await this.loadPastData();
         },
-        async submit() {
+        async submit(event) {
+            if (event) event.preventDefault();
+            localStorage.setItem('safetyLevel', this.safetyLevel);
             this.loading = true;
             this.error = '';
             this.imageUrl = '';

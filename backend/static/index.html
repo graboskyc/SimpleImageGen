@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,7 +39,7 @@
                     <textarea id="prompt" name="prompt" rows="2" placeholder="Describe your image..." x-model="prompt" x-bind:disabled="loading"></textarea>
 
                     <label for="safety">Safety Level (0 most strict, 6 least)</label>
-                    <input type="range" id="safety" name="safety" min="0" max="6" step="1" x-model="safetyLevel" x-bind:disabled="loading">
+                    <input type="range" id="safety" name="safety" min="0" max="6" step="1" x-model.number="safetyLevel" x-bind:disabled="loading">
 
                     <label for="file">Upload Image</label>
                     <input type="file" id="file" name="file" accept="image/*" x-ref="fileInput" @change="previewUpload">
