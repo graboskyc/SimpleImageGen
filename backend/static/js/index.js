@@ -1,3 +1,56 @@
+// IndexedDB helper functions
+const DB_NAME = 'SimpleImageGenDB';
+const DB_VERSION = 1;
+const IMAGES_STORE = 'pastImages';
+const PROMPTS_STORE = 'pastPrompts';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = function(e) {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(IMAGES_STORE)) {
+                db.createObjectStore(IMAGES_STORE, { keyPath: 'id', autoIncrement: true });
+            }
+            if (!db.objectStoreNames.contains(PROMPTS_STORE)) {
+                db.createObjectStore(PROMPTS_STORE, { keyPath: 'id', autoIncrement: true });
+            }
+        };
+        request.onsuccess = function(e) {
+            resolve(e.target.result);
+        };
+        request.onerror = function(e) {
+            reject(e);
+        };
+    });
+}
+
+function getAllFromStore(storeName) {
+    return openDB().then(db => {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const req = store.getAll();
+            req.onsuccess = () => {
+                resolve(req.result.map(item => item.value));
+            };
+            req.onerror = reject;
+        });
+    });
+}
+
+function addToStore(storeName, value) {
+    return openDB().then(db => {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            store.add({ value });
+            tx.oncomplete = resolve;
+            tx.onerror = reject;
+        });
+    });
+}
+
 function init() {
     return {
         prompt: '',
@@ -6,8 +59,13 @@ function init() {
         imageUrl: '',
         safetyLevel: 2,
         uploadPreview: '',
-        pastImages: JSON.parse(localStorage.getItem('pastImages') || '[]'),
-        submit: async function() {
+        pastImages: [],
+        pastPrompts: [],
+        async loadPastData() {
+            this.pastImages = await getAllFromStore(IMAGES_STORE);
+            this.pastPrompts = await getAllFromStore(PROMPTS_STORE);
+        },
+        async submit() {
             this.loading = true;
             this.error = '';
             this.imageUrl = '';
@@ -28,13 +86,11 @@ function init() {
                     const blob = await response.blob();
                     if (blob.type.startsWith('image/')) {
                         this.imageUrl = URL.createObjectURL(blob);
-
-                        // Convert blob to base64 and store in localStorage
                         const reader = new FileReader();
-                        reader.onload = () => {
-                            // Add to pastImages array
-                            this.pastImages.push(reader.result);
-                            localStorage.setItem('pastImages', JSON.stringify(this.pastImages));
+                        reader.onload = async () => {
+                            await addToStore(IMAGES_STORE, reader.result);
+                            await addToStore(PROMPTS_STORE, this.prompt);
+                            await this.loadPastData();
                         };
                         reader.readAsDataURL(blob);
                     } else {
