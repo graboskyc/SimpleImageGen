@@ -25,7 +25,7 @@ fi
 echo
 echo "Building container using tag ${abbrvhash}"
 echo
-docker build -t graboskyc/sig:latest -t graboskyc/sig:${abbrvhash} .
+docker build --platform=linux/amd64 -t graboskyc/sig:latest -t graboskyc/sig:${abbrvhash} .
 
 EXITCODE=$?
 

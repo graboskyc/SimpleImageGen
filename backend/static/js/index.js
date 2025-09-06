@@ -60,10 +60,12 @@ function init() {
         safetyLevel: 2,
         uploadPreview: '',
         pastImages: [],
-        pastPrompts: [],
         async loadPastData() {
             this.pastImages = await getAllFromStore(IMAGES_STORE);
-            this.pastPrompts = await getAllFromStore(PROMPTS_STORE);
+            console.log(this.pastImages);
+        },
+        async initLoad() {
+            await this.loadPastData();
         },
         async submit() {
             this.loading = true;
@@ -88,8 +90,7 @@ function init() {
                         this.imageUrl = URL.createObjectURL(blob);
                         const reader = new FileReader();
                         reader.onload = async () => {
-                            await addToStore(IMAGES_STORE, reader.result);
-                            await addToStore(PROMPTS_STORE, this.prompt);
+                            await addToStore(IMAGES_STORE, { img: reader.result, prompt: this.prompt });
                             await this.loadPastData();
                         };
                         reader.readAsDataURL(blob);
@@ -125,8 +126,11 @@ function init() {
             }
         },
         modalImg: '',
-        openModal(img) {
-            this.modalImg = img;
+        modalImg: '',
+        modalPrompt: '',
+        openModal(imgObj) {
+            this.modalImg = imgObj.img;
+            this.modalPrompt = imgObj.prompt;
             this.$refs.imgModal.showModal();
         }
     }

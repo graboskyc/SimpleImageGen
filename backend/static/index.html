@@ -16,7 +16,7 @@
 
     </head>
     <body data-theme="dark">
-        <div x-data="init()" data-theme="dark" class="container">
+    <div x-data="init()" x-init="initLoad()" data-theme="dark" class="container">
             <nav data-theme="dark">
                 <ul>
                     <li><img height="32" src="/img/icon.png" style="height: 32px !important;" /></li>
@@ -68,8 +68,8 @@
                 <details>
                     <summary>Click to view past images</summary>
                     <div style="display:flex;flex-wrap:wrap;gap:1em;margin-top:1em;">
-                        <template x-for="img in pastImages" :key="img">
-                            <img :src="img" alt="Past Image" style="max-width:120px;max-height:120px;border-radius:8px;box-shadow:0 0 4px #0002;cursor:pointer;" @click="openModal(img)" />
+                        <template x-for="imgObj in pastImages" :key="imgObj.img">
+                            <img :src="imgObj.img" alt="Past Image" style="max-width:120px;max-height:120px;border-radius:8px;box-shadow:0 0 4px #0002;cursor:pointer;" @click="openModal(imgObj)" />
                         </template>
                     </div>
                     <dialog x-ref="imgModal">
@@ -79,6 +79,7 @@
                                 <h3>Image Preview</h3>
                             </header>
                             <img :src="modalImg" alt="Full Image" style="max-width:100%;max-height:70vh;display:block;margin:auto;" />
+                            <p x-text="modalPrompt" style="margin-top:1em;font-style:italic;color:#ccc;"></p>
                         </article>
                     </dialog>
                 </details>
