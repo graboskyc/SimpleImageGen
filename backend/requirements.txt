@@ -4,3 +4,5 @@ uvicorn
 requests
 websockets
 websocket-client
+google-genai
+Pillow

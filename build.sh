@@ -37,7 +37,7 @@ if [ $EXITCODE -eq 0 ]
     echo
     docker stop sig
     docker rm sig
-    docker run -t -i -d -p 9999:8000 --name sig -e "FIREWORKSKEY=${FIREWORKSKEY}" --restart unless-stopped graboskyc/sig:${abbrvhash}
+    docker run -t -i -d -p 9999:8000 --name sig -e "FIREWORKSKEY=${FIREWORKSKEY}" -e "GOOGLE_API_KEY=${GOOGLE_API_KEY}" --restart unless-stopped graboskyc/sig:${abbrvhash}
 
     echo
     echo "+================================"

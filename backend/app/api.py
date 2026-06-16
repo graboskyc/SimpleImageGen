@@ -1,19 +1,21 @@
 import asyncio
-from fastapi import FastAPI, Response, File, UploadFile, HTTPException, Form, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
-import datetime
-from fastapi.staticfiles import StaticFiles
+import io
 import json
 import os
-import requests
-from typing import Dict, Any
-from fastapi.middleware.cors import CORSMiddleware
-import base64
-import json
-import time
 import threading
-import websocket as wsclient
+import time
 import urllib.parse
+from typing import Optional
+
+import requests
+import websocket as wsclient
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from google import genai
+from google.genai import types
+from PIL import Image
 
 api_app = FastAPI(title="api-app")
 app = FastAPI(title="spa-app")
@@ -27,14 +29,70 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-FIREWORKSAPIKEY = os.environ["FIREWORKSKEY"].strip()
+FIREWORKSAPIKEY = os.environ.get("FIREWORKSKEY", "").strip()
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "").strip()
+GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"
+GEMINI_CLIENT = genai.Client(api_key=GOOGLE_API_KEY)
 
 @api_app.get("/hello")
 async def hello():
     return {"message": "Hello World"}
 
 
-@api_app.post("/generate")
+def _gemini_part_from_upload(file: UploadFile):
+    """Convert an uploaded image into a Gemini inline data part."""
+    image_bytes = file.file.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded image was empty.")
+
+    mime_type = file.content_type or "image/jpeg"
+    return types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+
+
+def _generate_image_with_gemini(prompt: str, file: Optional[UploadFile] = None) -> bytes:
+    """Generate/edit an image using the same Gemini nano banana setup as the image_gen skill."""
+    contents = [prompt]
+    if file:
+        contents.append(_gemini_part_from_upload(file))
+
+    response = GEMINI_CLIENT.models.generate_content(
+        model=GEMINI_IMAGE_MODEL,
+        contents=contents,
+    )
+
+    for part in response.candidates[0].content.parts:
+        if part.inline_data is not None:
+            buf = io.BytesIO()
+            Image.open(io.BytesIO(part.inline_data.data)).save(buf, format="PNG")
+            return buf.getvalue()
+
+    raise HTTPException(status_code=502, detail="No image data returned from Gemini.")
+
+
+@api_app.post("/generateGemini")
+async def generate(
+    file: UploadFile = File(None),
+    prompt: str = Form("A beautiful sunset over the ocean"),
+    safety: int = Form(2)  # Kept for UI compatibility; Gemini image generation does not use this value.
+):
+    try:
+        print(f"Generating image with {GEMINI_IMAGE_MODEL}; prompt only: {file is None}")
+        image_bytes = await asyncio.to_thread(_generate_image_with_gemini, prompt, file)
+        return StreamingResponse(
+            iter([image_bytes]),
+            media_type="image/png"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Something went wrong: {str(e)}')
+    finally:
+        if file:
+            file.file.close()
+
+    print("Image generation completed.")
+
+@api_app.post("/generateFlux")
 async def generate(
     file: UploadFile = File(None),
     prompt: str = Form("A beautiful sunset over the ocean"),

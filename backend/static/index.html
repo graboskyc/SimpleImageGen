@@ -38,8 +38,16 @@
                     <label for="prompt">Prompt</label>
                     <textarea id="prompt" name="prompt" rows="2" placeholder="Describe your image..." x-model="prompt" x-bind:disabled="loading"></textarea>
 
-                    <label for="safety">Safety Level (0 most strict, 6 least)</label>
-                    <input type="range" id="safety" name="safety" min="0" max="6" step="1" x-model.number="safetyLevel" x-bind:disabled="loading">
+                    <label for="model">Model</label>
+                    <select id="model" name="model" x-model="modelChoice" x-bind:disabled="loading">
+                        <option value="gemini">Gemini</option>
+                        <option value="flux">Flux</option>
+                    </select>
+
+                    <div x-show="modelChoice === 'flux'">
+                        <label for="safety">Safety Level (0 most strict, 6 least)</label>
+                        <input type="range" id="safety" name="safety" min="0" max="6" step="1" x-model.number="safetyLevel" x-bind:disabled="loading">
+                    </div>
 
                     <label for="file">Upload Image</label>
                     <input type="file" id="file" name="file" accept="image/*" x-ref="fileInput" @change="previewUpload">
@@ -80,6 +88,7 @@
                             </header>
                             <img :src="modalImg" alt="Full Image" style="max-width:100%;max-height:70vh;display:block;margin:auto;" />
                             <p x-text="modalPrompt" style="margin-top:1em;font-style:italic;color:#ccc;"></p>
+                            <p x-text="modalModel" style="margin-top:1em;font-style:italic;color:#ccc;"></p>
                         </article>
                     </dialog>
                 </details>

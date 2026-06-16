@@ -59,6 +59,7 @@ function init() {
         imageUrl: '',
         safetyLevel: Number(localStorage.getItem('safetyLevel')) || 2,
         uploadPreview: '',
+        modelChoice:"gemini",
         pastImages: [],
         async loadPastData() {
             this.pastImages = await getAllFromStore(IMAGES_STORE);
@@ -87,7 +88,11 @@ function init() {
                 formData.append('file', fileInput.files[0]);
             }
             try {
-                const response = await fetch('/api/generate', {
+                var endpoint = "/api/generateGemini";
+                if(this.modelChoice === "flux"){
+                    endpoint = "/api/generateFlux";
+                }
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });
@@ -97,7 +102,7 @@ function init() {
                         this.imageUrl = URL.createObjectURL(blob);
                         const reader = new FileReader();
                         reader.onload = async () => {
-                            await addToStore(IMAGES_STORE, { img: reader.result, prompt: this.prompt });
+                            await addToStore(IMAGES_STORE, { img: reader.result, prompt: this.prompt, model: this.modelChoice });
                             await this.loadPastData();
                         };
                         reader.readAsDataURL(blob);
@@ -133,11 +138,12 @@ function init() {
             }
         },
         modalImg: '',
-        modalImg: '',
+        modalModel: '',
         modalPrompt: '',
         openModal(imgObj) {
             this.modalImg = imgObj.img;
             this.modalPrompt = imgObj.prompt;
+            this.modalModel = "Made with: " + (imgObj.model || "Unknown Model");
             this.$refs.imgModal.showModal();
         }
     }

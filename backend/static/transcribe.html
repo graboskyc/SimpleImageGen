@@ -42,9 +42,12 @@
                 <button type="button" @click="summarizeTranscript" style="margin-top:0.5em;" x-show="!listening && transcript">📝 Summarize Transcript</button>
                 <div x-text="status"></div>
                 <div style="margin-top:1em;">
-                    <template x-for="(item, index) in transcript" :key="index">
-                        <div style="background:#222;padding:0.5em 1em;margin-bottom:0.25em;border-radius:6px;color:#ffe;" x-text="item"></div>
-                    </template>
+                    <div style="background:#222;padding:0.5em 1em;margin-bottom:0.25em;border-radius:6px;color:#ffe;">
+                        <template x-for="(item, index) in transcript" :key="index">
+                            <span x-text="' ' + item + ' '"></span>
+                        </template>
+                    </div>
+
                     <template x-if="summary">
                         <div style="background:#444;padding:0.5em 1em;margin-top:1em;border-radius:6px;color:#bff;">
                             <strong>Summary:</strong>
