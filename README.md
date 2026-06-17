@@ -6,17 +6,20 @@ It started as just a Flux wrapper, hence the name. Expanded to other tasks.
 
 My first vibe coding yolo app with no validation or anything
 
-
 # Features
 ## Image Generation
 
 * Can provide a prompt to generate an image
 * Can provide a prompt and upload a reference image to generate an image
-* Slider bar for safety
+* Uses Google Gemini (`gemini-2.5-flash-image`) for image generation now
+* Slider bar for safety if using the `FLUX.1 Kontext Pro` model, but Fireworks pulled the model so this is now useless. It is being kept in the drop down in case the model reappears in Fireworks.
 * Store history of images in localstorage for reference later
-* Utilizes the `FLUX.1 Kontext Pro` model for this
  
 ![](screenshots/ss01.png)
+
+![](screenshots/ss03.png)
+
+![](screenshots/ss04.png)
 
 ## Audio Transcription
 
@@ -33,7 +36,7 @@ My first vibe coding yolo app with no validation or anything
 
 * have Docker
 * Copy `backend/sample.env` to `backend/.env`
-* Put your fireworks.ai API key in `backend/.env`
+* Put your fireworks.ai API key and Google Gemini API Key in `backend/.env`
 * Optionally put your TLS certificates in the `backend` folder. If you do not, they will be generated for you
 * Run `./build.sh` 
 * Visit on your port noting HTTPS as the protocol. It uses a self-signed certificate to permit microphone access.
